@@ -3,8 +3,8 @@
  * Handles product-related API calls
  */
 
-import apiClient, { type ApiResponse, type PaginatedResponse } from '../lib/apiClient';
-import type { Product, ProductFilters, Category } from '../types';
+import apiClient, { type ApiResponse, type PaginatedResponse } from '@/lib/apiClient';
+import type { Product, ProductFilters, Category } from '@/types';
 
 /**
  * Get list of products with filters and pagination

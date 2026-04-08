@@ -224,11 +224,7 @@ export interface StoreSettings {
   currency: string;
   timezone: string;
   language: string;
-  theme?: {
-    primary_color: string;
-    secondary_color: string;
-    font_family: string;
-  };
+  theme?: Record<string, any>; // Flexible theme structure
   contact?: {
     email: string;
     phone: string;
