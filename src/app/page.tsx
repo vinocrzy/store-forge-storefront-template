@@ -14,6 +14,7 @@
  */
 
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function HomePage() {
   return (
@@ -24,8 +25,16 @@ export default function HomePage() {
           Full-bleed with overlay gradient, left-aligned copy.
       ═══════════════════════════════════════════════════════ */}
       <section className="relative min-h-[850px] flex items-end pb-24 overflow-hidden">
-        {/* Background placeholder */}
-        <div className="absolute inset-0 bg-[var(--color-surface-high)]" />
+        {/* Background image */}
+        <div className="absolute inset-0">
+          <Image
+            src="/images/hero-main.webp"
+            alt="Shop our curated collection"
+            fill
+            className="object-cover"
+            priority
+          />
+        </div>
         {/* Overlay */}
         <div className="hero-overlay-var absolute inset-0" />
 
@@ -97,12 +106,17 @@ export default function HomePage() {
             { label: 'New Arrivals', href: '/products?sort=new' },
             { label: 'Best Sellers', href: '/products?sort=popular' },
             { label: 'Sale', href: '/products?sale=true' },
-          ].map(({ label, href }, i) => (
+          ].map(({ label, href }, i) => {
+            const images = ['/images/collection-1.webp', '/images/collection-2.webp', '/images/collection-3.webp'];
+            const alts = ['New arrivals collection', 'Best sellers collection', 'Sale items collection'];
+            return (
             <Link key={label} href={href} className="group relative overflow-hidden rounded-[var(--radius-xl)] aspect-[4/5] block">
-              {/* Placeholder bg — client replaces with real images */}
-              <div
-                className="absolute inset-0 transition-transform duration-500 group-hover:scale-105"
-                style={{ background: `hsl(${210 + i * 30}deg 15% ${88 - i * 5}%)` }}
+              {/* Collection image */}
+              <Image
+                src={images[i]}
+                alt={alts[i]}
+                fill
+                className="object-cover transition-transform duration-500 group-hover:scale-105"
               />
               {/* Scrim overlay */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
@@ -111,7 +125,8 @@ export default function HomePage() {
                 <h3 className="font-headline text-2xl text-white">{label}</h3>
               </div>
             </Link>
-          ))}
+            );
+          })}
         </div>
       </section>
 
@@ -174,10 +189,13 @@ export default function HomePage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
           {/* Image placeholder */}
           <div className="relative">
-            <div className="aspect-[4/5] rounded-[var(--radius-xl)] bg-[var(--color-surface)] overflow-hidden">
-              <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-sm text-[var(--color-muted-foreground)] font-label tracking-wider">Brand Photo</span>
-              </div>
+            <div className="aspect-[4/5] rounded-[var(--radius-xl)] bg-[var(--color-surface)] overflow-hidden relative">
+              <Image
+                src="/images/collection-2.webp"
+                alt="Our brand story - crafted with care"
+                fill
+                className="object-cover"
+              />
             </div>
             {/* Pull-quote card */}
             <div className="absolute -bottom-6 -right-6 bg-[var(--color-background)] rounded-2xl p-5 card-shadow max-w-[200px] hidden md:block">
