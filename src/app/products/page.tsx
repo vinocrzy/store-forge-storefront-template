@@ -1,94 +1,144 @@
-import Link from 'next/link';
-import { Button } from '@/components/ui/Button';
+'use client';
+
+import { useState, useEffect } from 'react';
+import { getProducts, getCategories } from '@/services/products';
+import type { Product, Category, ProductFilters } from '@/types';
+import { ProductCard } from '@/components/ui/ProductCard';
+import { SortSelect } from '@/components/ui/SortSelect';
+import { FilterSidebar } from '@/components/ui/FilterSidebar';
+import { LoadMoreButton } from '@/components/ui/LoadMoreButton';
+import { PageHero } from '@/components/ui/PageHero';
 
 export default function ProductsPage() {
-  // In a real app, this would fetch from API
-  const products = Array.from({ length: 12 }, (_, i) => ({
-    id: i + 1,
-    name: `Product ${i + 1}`,
-    price: 99.99 + i * 10,
-    description: 'High-quality product with excellent features',
-    image: null,
-  }));
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+  const [sort, setSort] = useState('featured');
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [search, setSearch] = useState('');
+
+  // Map UI sort value to API params
+  function getSortParams(s: string): Pick<ProductFilters, 'sort_by' | 'sort_order'> {
+    switch (s) {
+      case 'price-asc': return { sort_by: 'price', sort_order: 'asc' };
+      case 'price-desc': return { sort_by: 'price', sort_order: 'desc' };
+      case 'newest': return { sort_by: 'created_at', sort_order: 'desc' };
+      default: return { sort_by: 'name', sort_order: 'asc' };
+    }
+  }
+
+  const selectedCategoryObj = categories.find((c) => c.name === selectedCategory);
+
+  useEffect(() => {
+    getCategories().then(setCategories).catch(console.error);
+  }, []);
+
+  useEffect(() => {
+    setIsLoading(true);
+    const filters: ProductFilters = {
+      page: 1,
+      per_page: 12,
+      search: search || undefined,
+      category_id: selectedCategoryObj?.id,
+      ...getSortParams(sort),
+    };
+    getProducts(filters)
+      .then((res) => {
+        setProducts(res.data);
+        setCurrentPage(1);
+        setHasMore(res.current_page < res.last_page);
+      })
+      .catch(console.error)
+      .finally(() => setIsLoading(false));
+  }, [sort, selectedCategory, search, selectedCategoryObj?.id]);
+
+  function loadMore() {
+    const nextPage = currentPage + 1;
+    const filters: ProductFilters = {
+      page: nextPage,
+      per_page: 12,
+      search: search || undefined,
+      category_id: selectedCategoryObj?.id,
+      ...getSortParams(sort),
+    };
+    getProducts(filters).then((res) => {
+      setProducts((prev) => [...prev, ...res.data]);
+      setCurrentPage(nextPage);
+      setHasMore(nextPage < res.last_page);
+    }).catch(console.error);
+  }
+
+  const categoryNames = ['', ...categories.map((c) => c.name)];
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      {/* Page Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-          All Products
-        </h1>
-        <p className="text-muted-foreground">
-          Browse our complete collection of products
-        </p>
-      </div>
+    <div className="max-w-[1920px] mx-auto px-6 md:px-20 py-16">
+      <PageHero
+        eyebrow="Our Collection"
+        title="All Products"
+        description="Browse our complete collection"
+      />
 
-      {/* Filters Section */}
-      <div className="mb-8 flex flex-col md:flex-row gap-4">
+      {/* Search */}
+      <div className="mb-8">
         <input
           type="search"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
           placeholder="Search products..."
-          className="flex-1 px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+          className="w-full max-w-md px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-background text-foreground"
         />
-        <select className="px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
-          <option>All Categories</option>
-          <option>Electronics</option>
-          <option>Fashion</option>
-          <option>Home & Garden</option>
-          <option>Sports</option>
-        </select>
-        <select className="px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary">
-          <option>Sort by: Featured</option>
-          <option>Price: Low to High</option>
-          <option>Price: High to Low</option>
-          <option>Newest</option>
-        </select>
       </div>
 
-      {/* Products Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {products.map((product) => (
-          <div
-            key={product.id}
-            className="border border-border rounded-lg overflow-hidden hover:shadow-lg transition-shadow"
-          >
-            <Link href={`/products/${product.id}`}>
-              <div className="aspect-square bg-muted flex items-center justify-center cursor-pointer hover:bg-muted/80 transition-colors">
-                <span className="text-muted-foreground">Product Image</span>
-              </div>
-            </Link>
-            <div className="p-4">
-              <Link href={`/products/${product.id}`}>
-                <h3 className="font-semibold text-lg mb-2 hover:text-primary transition-colors">
-                  {product.name}
-                </h3>
-              </Link>
-              <p className="text-muted-foreground text-sm mb-3">
-                {product.description}
-              </p>
-              <div className="flex items-center justify-between">
-                <span className="text-xl font-bold text-primary">
-                  ${product.price.toFixed(2)}
-                </span>
-                <Button size="sm">Add to Cart</Button>
-              </div>
-            </div>
+      <div className="flex flex-col lg:flex-row gap-10">
+        {/* Sidebar */}
+        <FilterSidebar
+          categories={categoryNames}
+          selectedCategory={selectedCategory}
+          onCategoryChange={(cat) => setSelectedCategory(cat === selectedCategory ? '' : cat)}
+        />
+
+        {/* Main */}
+        <div className="flex-1">
+          {/* Sort bar */}
+          <div className="flex justify-between items-center mb-6">
+            <p className="text-sm text-muted-foreground">
+              {isLoading ? 'Loading…' : `${products.length} products`}
+            </p>
+            <SortSelect value={sort} onChange={setSort} />
           </div>
-        ))}
-      </div>
 
-      {/* Pagination */}
-      <div className="mt-12 flex justify-center gap-2">
-        <Button variant="outline" disabled>
-          Previous
-        </Button>
-        <Button variant="outline" className="bg-primary text-white">1</Button>
-        <Button variant="outline">2</Button>
-        <Button variant="outline">3</Button>
-        <Button variant="outline">
-          Next
-        </Button>
+          {/* Grid */}
+          {isLoading ? (
+            <div className="flex justify-center py-24">
+              <div className="w-8 h-8 rounded-full border-2 border-primary/20 border-t-primary animate-spin" />
+            </div>
+          ) : products.length === 0 ? (
+            <div className="text-center py-24 text-muted-foreground">
+              No products found.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+              {products.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  id={product.id}
+                  slug={product.slug}
+                  name={product.name}
+                  price={product.price}
+                  imageUrl={product.primary_image?.url ?? '/images/placeholder.webp'}
+                  badge={product.is_featured ? 'Featured' : undefined}
+                />
+              ))}
+            </div>
+          )}
+
+          <LoadMoreButton onClick={loadMore} hasMore={hasMore} />
+        </div>
       </div>
     </div>
   );
 }
+
+

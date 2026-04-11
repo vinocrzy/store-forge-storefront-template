@@ -73,21 +73,35 @@ export interface Category {
   updated_at: string;
 }
 
-// Cart Types
+// Cart Types (API Response — matches backend)
 export interface CartItem {
-  id: string; // Local cart item ID
+  id: number; // Cart item ID from API
+  cart_id: number;
   product_id: number;
-  product: Product;
+  variant_id: number | null;
   quantity: number;
-  price: number;
+  unit_price: number;
+  total_price: number;
+  // Product snapshot data
+  product_name: string;
+  product_slug: string;
+  product_image: string | null;
+  product_sku: string;
 }
 
 export interface Cart {
+  id: number;
+  token: string;
+  customer_id: number | null;
+  store_id: number;
   items: CartItem[];
   subtotal: number;
   tax: number;
   shipping: number;
   total: number;
+  expires_at: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 // Order Types
@@ -199,11 +213,12 @@ export interface Address {
   address_line1: string;
   address_line2: string | null;
   city: string;
-  state_province: string;
+  state_province?: string; // Backwards compatible
+  state?: string;         // Preferred field name
   postal_code: string;
   country: string;
   phone: string;
-  is_default: boolean;
+  is_default?: boolean;
   created_at?: string;
   updated_at?: string;
 }

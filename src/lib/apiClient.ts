@@ -11,20 +11,25 @@ export interface ApiResponse<T> {
   message?: string;
 }
 
+// Laravel Paginator Response Format (matches backend)
 export interface PaginatedResponse<T> {
+  current_page: number;
   data: T[];
-  meta: {
-    current_page: number;
-    per_page: number;
-    total: number;
-    last_page: number;
-  };
-  links: {
-    first: string | null;
-    last: string | null;
-    next: string | null;
-    prev: string | null;
-  };
+  first_page_url: string;
+  from: number | null;
+  last_page: number;
+  last_page_url: string;
+  links: Array<{
+    url: string | null;
+    label: string;
+    active: boolean;
+  }>;
+  next_page_url: string | null;
+  path: string;
+  per_page: number;
+  prev_page_url: string | null;
+  to: number | null;
+  total: number;
 }
 
 export interface ApiError {
