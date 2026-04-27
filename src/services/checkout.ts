@@ -28,6 +28,7 @@ export interface GuestCheckoutRequest {
   notes?: string;
   cart_token: string;
   coupon_code?: string;
+  payment_method?: string; // 'pending' | 'card' | 'online' | 'cod'
 }
 
 export interface AuthenticatedCheckoutRequest {
@@ -38,6 +39,16 @@ export interface AuthenticatedCheckoutRequest {
 
 export interface CheckoutResponse {
   order: Order;
+  payment?: {
+    gateway: 'stripe' | 'razorpay' | 'manual';
+    razorpay_order_id?: string;
+    key_id?: string;
+    amount?: number;
+    currency?: string;
+    client_secret?: string;
+    payment_intent_id?: string;
+    message?: string;
+  } | null;
   message?: string;
 }
 
@@ -51,7 +62,7 @@ export const guestCheckout = async (data: GuestCheckoutRequest): Promise<Checkou
       '/public/checkout',
       {
         cart_token: data.cart_token,
-        payment_method: 'pending',
+        payment_method: data.payment_method || 'pending',
         email: data.customer_email,
         first_name: data.shipping_address.first_name,
         last_name: data.shipping_address.last_name,

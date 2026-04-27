@@ -11,6 +11,8 @@ import Link from 'next/link';
 import { useCart } from '@/contexts/CartContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { guestCheckout, formatPhoneToE164, isValidE164Phone } from '@/services/checkout';
+import { getPaymentConfig, type PaymentData, type PaymentGateway } from '@/services/payment';
+import { PaymentStep } from './PaymentStep';
 import { Button } from '@/components/ui/Button';
 
 interface FormState {
@@ -49,6 +51,18 @@ export default function CheckoutPage() {
   const [form, setForm] = useState<FormState>(initialForm);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [paymentGateway, setPaymentGateway] = useState<PaymentGateway>('manual');
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('card');
+  const [showPaymentStep, setShowPaymentStep] = useState(false);
+  const [paymentData, setPaymentData] = useState<PaymentData>(null);
+  const [createdOrderNumber, setCreatedOrderNumber] = useState('');
+
+  // Fetch store payment config on mount
+  useEffect(() => {
+    getPaymentConfig()
+      .then((config) => setPaymentGateway(config.payment_gateway))
+      .catch(() => setPaymentGateway('manual'));
+  }, []);
 
   // Pre-fill form if authenticated
   useEffect(() => {
@@ -118,6 +132,7 @@ export default function CheckoutPage() {
     setSubmitting(true);
     try {
       const couponCode = typeof window !== 'undefined' ? localStorage.getItem('coupon_code') : null;
+      const payMethod = paymentGateway !== 'manual' ? selectedPaymentMethod : 'pending';
       const result = await guestCheckout({
         customer_name: `${form.first_name} ${form.last_name}`,
         customer_email: form.email,
@@ -136,9 +151,19 @@ export default function CheckoutPage() {
         notes: form.notes || undefined,
         cart_token: cart.token,
         coupon_code: couponCode || undefined,
+        payment_method: payMethod,
       });
 
-      // Clear cart and coupon on success
+      // Check if payment is needed
+      if (result.payment && result.payment.gateway !== 'manual') {
+        setCreatedOrderNumber(result.order.order_number);
+        setPaymentData(result.payment as PaymentData);
+        setShowPaymentStep(true);
+        setSubmitting(false);
+        return;
+      }
+
+      // No payment needed — redirect immediately
       await clearCart();
       if (typeof window !== 'undefined') {
         localStorage.removeItem('coupon_code');
@@ -237,6 +262,45 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
+              {/* Payment Method */}
+              {paymentGateway !== 'manual' && (
+                <div className="border border-border rounded-lg p-6">
+                  <h2 className="text-xl font-semibold mb-4">Payment Method</h2>
+                  <div className="space-y-3">
+                    <label className="flex items-center gap-4 p-4 border border-border rounded-lg cursor-pointer hover:border-primary transition-colors has-[:checked]:border-primary has-[:checked]:bg-primary/5">
+                      <input
+                        type="radio"
+                        name="paymentMethod"
+                        value="card"
+                        checked={selectedPaymentMethod === 'card'}
+                        onChange={() => setSelectedPaymentMethod('card')}
+                        className="w-4 h-4 accent-[var(--color-primary)]"
+                      />
+                      <div className="flex-1">
+                        <p className="font-semibold text-sm text-foreground">
+                          {paymentGateway === 'razorpay' ? 'Pay with UPI / Card / Netbanking' : 'Pay with Card'}
+                        </p>
+                        <p className="text-xs text-muted-foreground">Secure online payment</p>
+                      </div>
+                    </label>
+                    <label className="flex items-center gap-4 p-4 border border-border rounded-lg cursor-pointer hover:border-primary transition-colors has-[:checked]:border-primary has-[:checked]:bg-primary/5">
+                      <input
+                        type="radio"
+                        name="paymentMethod"
+                        value="pending"
+                        checked={selectedPaymentMethod === 'pending'}
+                        onChange={() => setSelectedPaymentMethod('pending')}
+                        className="w-4 h-4 accent-[var(--color-primary)]"
+                      />
+                      <div className="flex-1">
+                        <p className="font-semibold text-sm text-foreground">Pay Later / Cash on Delivery</p>
+                        <p className="text-xs text-muted-foreground">Complete payment after delivery</p>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+              )}
+
               {/* Notes */}
               <div className="border border-border rounded-lg p-6">
                 <h2 className="text-xl font-semibold mb-4">Order Notes</h2>
@@ -284,12 +348,32 @@ export default function CheckoutPage() {
                   </div>
                 </dl>
                 <Button type="submit" size="lg" fullWidth disabled={submitting} isLoading={submitting}>
-                  Place Order
+                  {selectedPaymentMethod === 'card' && paymentGateway !== 'manual'
+                    ? `Pay $${total.toFixed(2)}`
+                    : 'Place Order'}
                 </Button>
               </div>
             </div>
           </div>
         </form>
+
+        {/* Payment Modal */}
+        {showPaymentStep && paymentData && (
+          <PaymentStep
+            paymentData={paymentData}
+            orderNumber={createdOrderNumber}
+            customerName={`${form.first_name} ${form.last_name}`}
+            customerEmail={form.email}
+            customerPhone={formatPhoneToE164(form.phone)}
+            total={total}
+            onPaymentComplete={() => {
+              clearCart();
+              if (typeof window !== 'undefined') localStorage.removeItem('coupon_code');
+              router.push(`/orders/confirmation?order=${createdOrderNumber}`);
+            }}
+            onPaymentFailed={(err) => console.error('Payment failed:', err)}
+          />
+        )}
       </div>
     </div>
   );
