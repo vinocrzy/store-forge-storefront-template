@@ -10,6 +10,7 @@ import type { Metadata } from 'next';
 import { getProductBySlug } from '@/services/products';
 import { ProductReviews } from './ProductReviews';
 import { ProductDetailClient } from './ProductDetailClient';
+import { ProductRecommendations } from '@/components/recommendations/ProductRecommendations';
 
 interface ProductDetailPageProps {
   params: Promise<{ slug: string }>;
@@ -116,6 +117,12 @@ export default async function ProductDetailPage({ params }: ProductDetailPagePro
         <h2 className="text-2xl font-bold text-foreground mb-8">Customer Reviews</h2>
         <ProductReviews slug={slug} />
       </div>
+
+      {/* Phase 9C: Recommendations */}
+      <ProductRecommendations
+        productId={product.id}
+        title="You May Also Like"
+      />
     </div>
   );
 }

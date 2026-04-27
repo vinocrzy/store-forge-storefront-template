@@ -15,6 +15,7 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
+import { NewsletterSignup } from '@/components/newsletter/NewsletterSignup';
 
 export default function HomePage() {
   return (
@@ -246,6 +247,9 @@ export default function HomePage() {
           Shop All Products
         </Link>
       </section>
+
+      {/* ── 7. NEWSLETTER ─────────────────────────────────────────────────── */}
+      <NewsletterSignup />
 
     </div>
   );
