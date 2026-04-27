@@ -27,6 +27,7 @@ export interface GuestCheckoutRequest {
   billing_address?: ShippingAddress;
   notes?: string;
   cart_token: string;
+  coupon_code?: string;
 }
 
 export interface AuthenticatedCheckoutRequest {
@@ -62,6 +63,7 @@ export const guestCheckout = async (data: GuestCheckoutRequest): Promise<Checkou
         postal_code: data.shipping_address.postal_code,
         country: data.shipping_address.country,
         note: data.notes,
+        ...(data.coupon_code ? { coupon_code: data.coupon_code } : {}),
       }
     );
     return response.data.data;

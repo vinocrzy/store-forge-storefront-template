@@ -1,16 +1,19 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Enable static site generation (SSG)
-  output: 'export',
-  
-  // Disable image optimization for static export
+  // Allow remote images from API
   images: {
-    unoptimized: true,
+    remotePatterns: [
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+      },
+      {
+        protocol: 'https',
+        hostname: '**',
+      },
+    ],
   },
-  
-  // Trailing slashes for static hosting
-  trailingSlash: true,
   
   // Environment variables that should be available on the client side
   env: {

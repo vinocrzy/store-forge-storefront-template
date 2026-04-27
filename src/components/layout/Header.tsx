@@ -13,6 +13,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { StoreLogo } from '@/components/StoreLogo';
+import { useCart } from '@/contexts/CartContext';
+import { useWishlist } from '@/contexts/WishlistContext';
 
 const navLinks = [
   { href: '/products', label: 'Shop' },
@@ -25,11 +27,13 @@ export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const pathname = usePathname();
+  const { itemCount } = useCart();
+  const { wishlistCount } = useWishlist();
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      window.location.href = `/products?search=${encodeURIComponent(searchQuery)}`;
+      window.location.href = `/search?q=${encodeURIComponent(searchQuery)}`;
     }
   };
 
@@ -90,6 +94,22 @@ export function Header() {
             </svg>
           </Link>
 
+          {/* Wishlist */}
+          <Link
+            href="/account?tab=wishlist"
+            aria-label="Wishlist"
+            className="hidden md:flex relative text-[var(--color-label)] hover:text-[var(--color-primary)] transition-colors"
+          >
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+            </svg>
+            {wishlistCount > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 brand-gradient text-white text-[10px] rounded-full h-4 w-4 flex items-center justify-center font-label">
+                {wishlistCount}
+              </span>
+            )}
+          </Link>
+
           {/* Cart */}
           <Link
             href="/cart"
@@ -99,9 +119,11 @@ export function Header() {
             <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5V6a3.75 3.75 0 10-7.5 0v4.5m11.356-1.993l1.263 12c.07.665-.45 1.243-1.119 1.243H4.25a1.125 1.125 0 01-1.12-1.243l1.264-12A1.125 1.125 0 015.513 7.5h12.974c.576 0 1.059.435 1.119 1.007z" />
             </svg>
-            <span className="absolute -top-1.5 -right-1.5 brand-gradient text-white text-[10px] rounded-full h-4 w-4 flex items-center justify-center font-label">
-              0
-            </span>
+            {itemCount > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 brand-gradient text-white text-[10px] rounded-full h-4 w-4 flex items-center justify-center font-label">
+                {itemCount}
+              </span>
+            )}
           </Link>
 
           {/* Mobile toggle */}
